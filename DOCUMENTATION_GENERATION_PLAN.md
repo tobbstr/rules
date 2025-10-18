@@ -117,6 +117,11 @@ var OrderEligibilityRule = rules.NewWithGroup(
         // Rule logic
     },
 )
+
+// Hierarchical rules automatically inherit domains from children
+var rule1 = rules.NewWithDomain("check1", OrderDomain, pred1)    // domains: [order]
+var rule2 = rules.NewWithDomain("check2", UserDomain, pred2)     // domains: [user]
+var combined = rules.And("combined", rule1, rule2)               // domains: [order, user] (auto-inherited, deduplicated, auto-registered)
 ```
 
 **Benefits**:
@@ -125,6 +130,8 @@ var OrderEligibilityRule = rules.NewWithGroup(
 - Clean, minimal API with focused constructors
 - Descriptions added separately for flexibility
 - No separate registration step needed
+- **Hierarchical rules (And, Or, Not, etc.) auto-inherit domains from children**
+- **Automatic deduplication of inherited domains**
 - Documentation always up-to-date
 
 ### 2.4 Domain Tagging and Groups
@@ -145,7 +152,53 @@ Groups provide human-readable names for cross-domain rule collections,
 ensuring documentation headers are meaningful rather than just lists of 
 domain names.
 
-### 2.5 Documentation Generation by Domain and Group
+### 2.5 Hierarchical Rules and Domain Inheritance
+
+Hierarchical rules (And, Or, Not, quantifiers, etc.) automatically inherit 
+domains from their children:
+
+**Inheritance Rules**:
+1. Collect domains from all child rules
+2. Deduplicate domains (avoid duplicates)
+3. Auto-register if result has at least one domain
+4. No domains inherited = no registration (utility rules)
+
+**Examples**:
+```go
+// Single domain inheritance
+var r1 = rules.NewWithDomain("check1", OrderDomain, pred1)  // [order]
+var r2 = rules.NewWithDomain("check2", OrderDomain, pred2)  // [order]
+var and = rules.And("both", r1, r2)                         // [order] (deduplicated)
+
+// Multi-domain inheritance
+var r3 = rules.NewWithDomain("check3", UserDomain, pred3)   // [user]
+var or = rules.Or("either", r1, r3)                         // [order, user]
+
+// Nested inheritance
+var not = rules.Not("invert", or)                           // [order, user] (inherited from or)
+
+// No domains = no registration
+var util1 = rules.New("util1", pred4)                       // [] (no domain)
+var util2 = rules.New("util2", pred5)                       // [] (no domain)
+var utilAnd = rules.And("utils", util1, util2)             // [] (no registration)
+
+// Mixed: some with domains, some without
+var mixed = rules.And("mixed", r1, util1)                   // [order] (from r1)
+```
+
+**Supported Combinators**:
+- `And()`, `Or()`, `Not()` - logical operators
+- `AllOf()`, `AnyOf()`, `NoneOf()` - convenience wrappers
+- `AtLeast()`, `Exactly()`, `AtMost()` - quantifiers
+- Builder pattern: `Builder[T].And()`, `.Or()`, etc.
+
+**Benefits**:
+- Compositional: build complex rules from simple ones naturally
+- Automatic: no manual domain tracking needed
+- Consistent: same behavior across all combinators
+- Flexible: mix domain-tagged and utility rules freely
+
+### 2.6 Documentation Generation by Domain and Group
 
 Generate documentation filtered by domain or group:
 
@@ -155,7 +208,7 @@ allDocs := rules.GenerateMarkdown(rules.AllRules(), opts)
 
 // Generate only Order domain rules
 orderDocs := rules.GenerateMarkdown(
-    rules.RulesByDomain("order"),
+    rules.RulesByDomain(order.OrderDomain),
     opts,
 )
 
@@ -168,7 +221,7 @@ eligibilityDocs := rules.GenerateMarkdown(
 // Generate cross-domain rules (Order + User)
 // Groups within these domains will use their group names in headers
 crossDocs := rules.GenerateMarkdown(
-    rules.RulesByDomains("order", "user"),
+    rules.RulesByDomains(order.OrderDomain, user.UserDomain),
     opts,
 )
 ```
@@ -176,16 +229,20 @@ crossDocs := rules.GenerateMarkdown(
 ## 3. Core Features
 
 ### 3.1 Information Extraction
-Each rule should expose:
-- **Name**: Human-readable identifier
-- **Description**: Detailed explanation of the rule's purpose
+Each rule should expose or have associated with it:
+- **Name**: Human-readable identifier (from `Rule[T].Name()`)
+- **Description**: Detailed explanation of the rule's purpose (from registry, not on rule)
 - **Type**: Simple, AND, OR, NOT, quantifier (AtLeast, Exactly, AtMost)
 - **Children**: Nested rules in hierarchical structures
-- **Domains**: Domain tags identifying which domain(s) the rule belongs to
-- **Group**: Human-readable group name for cross-domain rules
-- **Metadata**: Additional information (tags, owner, version, etc.)
-- **Examples**: Optional input/output examples
+- **Domains**: Domain tags identifying which domain(s) the rule belongs to (from registry)
+- **Group**: Human-readable group name for cross-domain rules (from registry)
+- **Metadata**: Additional information (tags, owner, version, etc.) (from registry)
+- **Examples**: Optional input/output examples (via optional interface)
 - **Constraints**: Quantifier thresholds (for AtLeast, Exactly, AtMost)
+
+**Note**: The `Rule[T]` interface only has `Evaluate()` and `Name()` methods. All other
+information (description, domains, groups, metadata) is stored in the registry as
+documentation metadata, keeping rules focused on their core evaluation logic.
 
 ### 3.2 Output Formats
 
@@ -273,34 +330,43 @@ func NewWithGroup[T any](
     predicate PredicateFunc[T],
 ) Rule[T]
 
-// For rules without domain
+// For rules without domain (unregistered, useful for utility rules)
 func New[T any](name string, predicate PredicateFunc[T]) Rule[T]
-
-// NewWithGroupFromRule wraps an existing rule and registers with group
-func NewWithGroupFromRule[T any](
-    rule Rule[T],
-    groupName string,
-    domains []Domain,
-) Rule[T]
 ```
 
 ### 4.2.1 Adding Descriptions to Rules
 
-Descriptions are added after rule creation to keep constructors focused:
+Descriptions are stored in the registry as metadata, not on the rule itself:
 
 ```go
-// WithDescription adds a description to an existing rule
-// Returns a wrapped rule with the description
+// WithDescription updates the registry entry with a description
+// Returns the same rule (unchanged) for convenience
+// Lookup is by pointer equality
 func WithDescription[T any](rule Rule[T], description string) Rule[T]
 
 // UpdateMetadata updates or adds metadata to an already registered rule
+// Lookup is by pointer equality
+// Returns error if rule not found in registry
 func UpdateMetadata(rule any, metadata RuleMetadata) error
+
+// GetDescription retrieves the description from the registry
+// Lookup is by pointer equality
+// Returns empty string if rule not found
+func GetDescription(rule any) string
 ```
 
+**Registry Lookup Mechanism**:
+All registry operations (`WithDescription`, `UpdateMetadata`, `GetDescription`) use
+**pointer equality** to find rules. This means:
+- The exact same rule pointer must be passed to these functions
+- Works correctly because rules are typically package-level variables
+- Ensures proper association between rules and their metadata
+
 **Design Rationale**:
-- **Separation of concerns**: Rule creation focuses on logic, not documentation
-- **Clean API**: Fewer constructor variations to remember
-- **Composable**: `WithDescription` can be chained or applied conditionally
+- **Single source of truth**: Description stored only in registry, not in rule
+- **Separation of concerns**: Rules contain logic, registry contains metadata
+- **Immutability**: Rules remain immutable; descriptions don't affect rule identity
+- **Clean API**: No `Description()` method on `Rule[T]` interface
 - **Optional**: Descriptions only added when needed for documentation
 
 **Usage patterns**:
@@ -308,16 +374,24 @@ func UpdateMetadata(rule any, metadata RuleMetadata) error
 // Without description (minimal)
 var SimpleRule = rules.NewWithDomain("check", OrderDomain, predicate)
 
-// With description (composable)
+// With description (updates registry entry)
 var DocumentedRule = rules.WithDescription(
     rules.NewWithDomain("check", OrderDomain, predicate),
     "Detailed explanation of what this rule does",
 )
+// ^ Same rule object returned, registry entry updated
 
 // Or assign separately
 var MyRule = rules.NewWithDomain("check", OrderDomain, predicate)
-var MyDocumentedRule = rules.WithDescription(MyRule, "Description")
+rules.WithDescription(MyRule, "Description")  // Updates registry
+
+// Retrieve description from registry
+description := rules.GetDescription(MyRule)
 ```
+
+**Note**: The `Rule[T]` interface does NOT have a `Description()` method. Descriptions
+are documentation metadata managed by the registry, not part of the rule's core
+behavior.
 
 ### 4.3 Registry API
 
@@ -331,16 +405,16 @@ type Registry interface {
     AllRules() []RegisteredRule
     
     // RulesByDomain returns rules for a specific domain
-    RulesByDomain(domain string) []RegisteredRule
+    RulesByDomain(domain Domain) []RegisteredRule
     
     // RulesByDomains returns rules matching any of the specified domains
-    RulesByDomains(domains ...string) []RegisteredRule
+    RulesByDomains(domains ...Domain) []RegisteredRule
     
     // RulesByGroup returns rules belonging to a named group
     RulesByGroup(groupName string) []RegisteredRule
     
     // Domains returns all registered domain names
-    Domains() []string
+    Domains() []Domain
     
     // Groups returns all registered group names
     Groups() []string
@@ -355,10 +429,14 @@ type RegisteredRule struct {
     Rule any
     
     // Domains lists which domain(s) this rule belongs to
-    Domains []string
+    Domains []Domain
     
     // Group is the human-readable group name (optional)
     Group string
+    
+    // Description is the documentation description (optional)
+    // This is the single source of truth for rule descriptions
+    Description string
     
     // Metadata provides additional rule information
     Metadata *RuleMetadata
@@ -371,14 +449,14 @@ type RegisteredRule struct {
 type RegistrationOption func(*registrationConfig)
 
 // Domain tags the rule with a single domain
-func Domain(name string) RegistrationOption
+func Domain(d Domain) RegistrationOption
 
 // Domains tags the rule with multiple domains (no group name)
-func Domains(names ...string) RegistrationOption
+func Domains(domains ...Domain) RegistrationOption
 
 // Group tags the rule with a meaningful name and multiple domains
 // This is the preferred method for cross-domain rules
-func Group(name string, domains ...string) RegistrationOption
+func Group(name string, domains ...Domain) RegistrationOption
 
 // WithMetadata attaches metadata to the rule
 func WithMetadata(metadata RuleMetadata) RegistrationOption
@@ -397,12 +475,12 @@ func AllRules() []RegisteredRule {
 }
 
 // RulesByDomain returns rules for a domain from the default registry
-func RulesByDomain(domain string) []RegisteredRule {
+func RulesByDomain(domain Domain) []RegisteredRule {
     return DefaultRegistry.RulesByDomain(domain)
 }
 
 // RulesByDomains returns rules for domains from the default registry
-func RulesByDomains(domains ...string) []RegisteredRule {
+func RulesByDomains(domains ...Domain) []RegisteredRule {
     return DefaultRegistry.RulesByDomains(domains...)
 }
 
@@ -452,10 +530,10 @@ type DocumentOptions struct {
     GroupByDomain bool
     
     // IncludeDomains filters to specific domains (empty = all)
-    IncludeDomains []string
+    IncludeDomains []Domain
     
     // ExcludeDomains excludes specific domains
-    ExcludeDomains []string
+    ExcludeDomains []Domain
     
     // ShowCrossDomainLinks highlights cross-domain dependencies
     ShowCrossDomainLinks bool
@@ -492,7 +570,7 @@ type DocumentableRule[T any] interface {
 type RuleMetadata struct {
     // Domains identifies which domain(s) this rule belongs to
     // This is typically set via registration, but can be embedded
-    Domains []string
+    Domains []Domain
     
     // Tags categorize the rule (beyond domain)
     Tags []string
@@ -513,7 +591,7 @@ type RuleMetadata struct {
     RelatedRules []string
     
     // Dependencies lists other domains this rule depends on
-    Dependencies []string
+    Dependencies []Domain
 }
 
 // RuleExample documents example inputs and outputs
@@ -555,10 +633,10 @@ func GenerateMermaid[T any](rule Rule[T], opts DocumentOptions) (string, error)
 func GenerateAllRulesMarkdown(opts DocumentOptions) (string, error)
 
 // GenerateDomainMarkdown generates docs for a specific domain
-func GenerateDomainMarkdown(domain string, opts DocumentOptions) (string, error)
+func GenerateDomainMarkdown(domain Domain, opts DocumentOptions) (string, error)
 
 // GenerateDomainsMarkdown generates docs for multiple domains
-func GenerateDomainsMarkdown(domains []string, opts DocumentOptions) (string, error)
+func GenerateDomainsMarkdown(domains []Domain, opts DocumentOptions) (string, error)
 
 // GenerateGroupMarkdown generates docs for a specific group
 func GenerateGroupMarkdown(groupName string, opts DocumentOptions) (string, error)
@@ -575,13 +653,19 @@ func GenerateGroupMarkdown(groupName string, opts DocumentOptions) (string, erro
 5. **Implement auto-registering rule creation functions**:
    - `NewWithDomain()`, `NewWithGroup()`, etc.
    - Automatically register on creation
-6. Create `documenter.go` with base interfaces
-7. Implement rule introspection (extract structure, children, type, domains, 
+6. **Implement domain inheritance for hierarchical rules**:
+   - Modify `And()`, `Or()`, `Not()` to collect domains from children
+   - Deduplicate inherited domains
+   - Auto-register if domains present
+   - Update quantifiers (`AtLeast`, `Exactly`, `AtMost`) similarly
+   - Update helper functions (`AllOf`, `AnyOf`, `NoneOf`)
+7. Create `documenter.go` with base interfaces
+8. Implement rule introspection (extract structure, children, type, domains, 
    groups)
-8. Add `Metadata()` and `Examples()` methods as optional interfaces
-9. Create internal representation of rule hierarchy with domain and group info
-10. Write comprehensive tests for registry (including group operations and 
-    auto-registration)
+9. Add `Metadata()` and `Examples()` methods as optional interfaces
+10. Create internal representation of rule hierarchy with domain and group info
+11. Write comprehensive tests for registry (including group operations, 
+    auto-registration, and domain inheritance)
 
 ### 5.2 Phase 2: Markdown Generator (Week 1-2)
 1. Implement tree-based Markdown generation
@@ -1123,7 +1207,11 @@ rules/
 ```
 
 ### 9.2 Updated Files
-- `rule.go`: Add `WithDescription()` function and optional `DocumentableRule` interface
+- `rule.go`: **BREAKING CHANGE** - Remove `Description()` method from `Rule[T]` interface
+  (descriptions now stored in registry only)
+- `rule.go`: Add `NewWithDomain()` and `NewWithGroup()` functions for auto-registration
+- `rule.go`: Modify `And()`, `Or()`, `Not()` to inherit domains from children
+- `helpers.go`: Update `AllOf()`, `AnyOf()`, `NoneOf()`, quantifiers for domain inheritance
 - `README.md`: Add documentation generation section and registry usage
 - `EXAMPLES.md`: Add documentation generation examples with multi-domain scenarios
 
@@ -1246,27 +1334,31 @@ type Request struct {
     User  user.User
 }
 
-// Define the rule logic
-var orderEligibilityLogic = rules.Or(
+// Auto-register cross-domain rule with meaningful group name
+var OrderEligibilityRule = rules.NewWithGroup(
     "order eligibility",
-    rules.Map("VIP bypass", user.VIPCustomerRule, 
-        func(r Request) user.User { return r.User }),
-    rules.And("standard eligibility",
-        rules.Map("min amount", order.MinimumAmountRule,
-            func(r Request) order.Order { return r.Order }),
-        rules.Map("active", user.ActiveUserRule,
-            func(r Request) user.User { return r.User }),
-    ),
-)
-
-// Auto-register with group name - impossible to forget!
-var OrderEligibilityRule = rules.NewWithGroupFromRule(
-    orderEligibilityLogic,
     "Order Eligibility", // Human-readable group name
     []rules.Domain{order.OrderDomain, user.UserDomain}, // Type-safe domains
+    func(r Request) (bool, error) {
+        // Check if VIP customer (bypass other checks)
+        if r.User.IsVIP {
+            return true, nil
+        }
+        
+        // Otherwise check standard eligibility
+        minAmountOK := r.Order.Amount >= 100.0
+        activeUserOK := r.User.Status == "active"
+        
+        return minAmountOK && activeUserOK, nil
+    },
 )
 
-// Optional: Add metadata
+// Optional: Add description and metadata
+var OrderEligibilityRuleDoc = rules.WithDescription(
+    OrderEligibilityRule,
+    "Determines if an order can be placed based on user and order criteria",
+)
+
 func init() {
     rules.UpdateMetadata(OrderEligibilityRule, rules.RuleMetadata{
         Owner:        "platform-team",
@@ -1315,7 +1407,7 @@ func main() {
     }
     
     // Generate domain-specific documentation
-    orderDocs, err := rules.GenerateDomainMarkdown("order", 
+    orderDocs, err := rules.GenerateDomainMarkdown(order.OrderDomain, 
         rules.DocumentOptions{
             Title:           "Order Domain Rules",
             Format:          rules.FormatMarkdown,
@@ -1362,7 +1454,7 @@ fmt.Printf("Available groups: %v\n", groups)
 // Output: Available groups: [Order Eligibility Payment Processing]
 
 // Get all rules for a specific domain
-orderRules := rules.RulesByDomain("order")
+orderRules := rules.RulesByDomain(order.OrderDomain)
 fmt.Printf("Order domain has %d rules\n", len(orderRules))
 
 // Get rules by group name (human-readable!)
@@ -1370,7 +1462,7 @@ eligibilityRules := rules.RulesByGroup("Order Eligibility")
 fmt.Printf("Order Eligibility group has %d rules\n", len(eligibilityRules))
 
 // Get rules spanning multiple domains (cross-domain rules)
-crossDomainRules := rules.RulesByDomains("order", "user")
+crossDomainRules := rules.RulesByDomains(order.OrderDomain, user.UserDomain)
 fmt.Printf("Found %d rules spanning order and user domains\n", 
     len(crossDomainRules))
 
@@ -1393,8 +1485,8 @@ groupDocs, err := rules.GenerateGroupMarkdown("Order Eligibility",
 // Generate documentation with domain filtering
 opts := rules.DocumentOptions{
     Format:         rules.FormatMarkdown,
-    IncludeDomains: []string{"order", "user"}, // Only these domains
-    ExcludeDomains: []string{"internal"},       // Exclude internal rules
+    IncludeDomains: []rules.Domain{order.OrderDomain, user.UserDomain}, // Only these domains
+    ExcludeDomains: []rules.Domain{internal.InternalDomain},             // Exclude internal rules
     GroupByDomain:  true,
 }
 
@@ -1408,7 +1500,11 @@ docs, err := rules.GenerateAllRulesMarkdown(opts)
 func TestRuleDocumentation(t *testing.T) {
     // Ensure all expected domains are registered
     domains := rules.DefaultRegistry.Domains()
-    expectedDomains := []string{"order", "user", "payment"}
+    expectedDomains := []rules.Domain{
+        order.OrderDomain,
+        user.UserDomain,
+        payment.PaymentDomain,
+    }
     for _, expected := range expectedDomains {
         assert.Contains(t, domains, expected, 
             "Domain %s should be registered", expected)
@@ -1472,53 +1568,48 @@ func TestRuleDocumentation(t *testing.T) {
    - **Current decision**: Groups remain strings for flexibility and readability
    - **Reconsider if**: Users start reusing group names across packages
 
-2. **Hierarchical Rules**: How to handle And, Or, Not with auto-registration?
-   - Should composed rules inherit parent's domain/group?
-   - Manual registration for hierarchical rules?
-   - Special constructors like `AndWithDomain()`?
-
-3. **Domain Naming**: Best practices for domain names?
+2. **Domain Naming**: Best practices for domain names?
    - Enforce lowercase? (e.g., `Domain("order")` vs `Domain("Order")`)
    - Singular vs plural? (e.g., `Domain("order")` vs `Domain("orders")`)
    - Hyphenated? (e.g., `Domain("order-management")`)
    - Subdomains? (e.g., `Domain("order.shipping")`)
    - Recommend naming convention in docs?
 
-4. **Registry Initialization**: How to ensure all domains are loaded?
+3. **Registry Initialization**: How to ensure all domains are loaded?
    - Auto-registration happens when variables are initialized
    - What about lazy loading or conditional rules?
 
-5. **Cross-Domain Dependencies**: How to validate dependencies?
+4. **Cross-Domain Dependencies**: How to validate dependencies?
    - Should we detect circular dependencies?
    - Auto-discover dependencies from rule structure?
 
-6. **Predicate Visualization**: How to document the actual predicate logic 
+5. **Predicate Visualization**: How to document the actual predicate logic 
    without exposing implementation details?
    - Option A: Use comments/descriptions only
    - Option B: Allow optional source code inclusion
    - Option C: Support pseudo-code representation
 
-7. **Cross-Type Rules**: How to document rules that operate on different 
+6. **Cross-Type Rules**: How to document rules that operate on different 
    types via `Map()`?
    - Show type transformations?
    - Document extractor functions?
    - Indicate domain of the extracted type?
 
-8. **Dynamic Rules**: How to handle rules built at runtime?
+7. **Dynamic Rules**: How to handle rules built at runtime?
    - Snapshot at documentation generation time?
    - Mark as "dynamic" in output?
 
-9. **Large Hierarchies**: How to handle extremely deep/wide rule trees?
+8. **Large Hierarchies**: How to handle extremely deep/wide rule trees?
    - Pagination in HTML?
    - Summary views with expand-on-demand?
    - Domain-level and group-level summaries?
 
-10. **Security**: Should sensitive rule logic be redactable?
+9. **Security**: Should sensitive rule logic be redactable?
     - Add `Sensitive bool` flag to metadata?
     - Support redaction templates?
     - Per-domain or per-group sensitivity settings?
 
-11. **Domain Ownership**: How to handle overlapping ownership?
+10. **Domain Ownership**: How to handle overlapping ownership?
     - Can multiple teams own the same domain?
     - Can a group have a different owner than its constituent domains?
     - How to track contributors per domain and per group?
@@ -1653,6 +1744,8 @@ func TestRuleDocumentation(t *testing.T) {
 - [ ] Multi-domain examples use meaningful group names
 - [ ] **Auto-registration functions work correctly** (`NewWithDomain`, `NewWithGroup`)
 - [ ] **Auto-registration makes forgotten rules impossible**
+- [ ] **Domain inheritance works for all hierarchical rules** (And, Or, Not, quantifiers)
+- [ ] **Domain deduplication works correctly** in inherited domains
 - [ ] Group-based querying works correctly
 - [ ] Documentation headers use group names (not domain lists)
 - [ ] README updated with:

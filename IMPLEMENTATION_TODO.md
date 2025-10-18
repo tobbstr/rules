@@ -6,94 +6,107 @@ This TODO list tracks the implementation of the documentation generation feature
 
 ### Core Types and Registry
 - [ ] 1. Create Domain type and core type definitions
-- [ ] 2. Create registry.go with Registry interface and implementation
-- [ ] 3. Implement Register(), AllRules(), RulesByDomain(), RulesByGroup() functions
-- [ ] 4. Add domain and group tagging via RegistrationOption pattern
+- [ ] 2. **BREAKING CHANGE**: Remove Description() method from Rule[T] interface in rule.go
+- [ ] 3. Create registry.go with Registry interface and implementation
+- [ ] 4. Add Description field to RegisteredRule struct (single source of truth)
+- [ ] 5. Implement Register(), AllRules(), RulesByDomain(), RulesByGroup() functions
+- [ ] 6. Add domain and group tagging via RegistrationOption pattern
+- [ ] 7. Implement pointer-equality based rule lookup in registry
 
 ### Auto-Registration
-- [ ] 5. Implement auto-registering rule creation functions (NewWithDomain, NewWithGroup, WithDescription, etc.)
+- [ ] 8. Implement auto-registering rule creation functions (NewWithDomain, NewWithGroup)
+- [ ] 9. Implement WithDescription helper (updates registry, returns same rule)
+- [ ] 10. Implement GetDescription helper (retrieves from registry by pointer)
+
+### Domain Inheritance for Hierarchical Rules
+- [ ] 11. Modify And(), Or(), Not() to collect and deduplicate domains from children
+- [ ] 12. Update quantifiers (AtLeast, Exactly, AtMost) to inherit domains
+- [ ] 13. Update helper functions (AllOf, AnyOf, NoneOf) to inherit domains
+- [ ] 14. Ensure hierarchical rules auto-register if they have domains
 
 ### Documentation Infrastructure
-- [ ] 6. Create documenter.go with base interfaces and DocumentOptions
-- [ ] 7. Implement rule introspection (extract structure, children, type, domains, groups)
-- [ ] 8. Add Metadata() and Examples() optional interfaces
-- [ ] 9. Create internal representation of rule hierarchy with domain and group info
+- [ ] 15. Create documenter.go with base interfaces and DocumentOptions
+- [ ] 16. Implement rule introspection (extract structure, children, type, domains, groups)
+- [ ] 17. Add Metadata() and Examples() optional interfaces
+- [ ] 18. Create internal representation of rule hierarchy with domain and group info
 
 ### Testing
-- [ ] 10. Write comprehensive tests for registry (including group operations and auto-registration)
+- [ ] 19. Write comprehensive tests for registry (including group operations and auto-registration)
+- [ ] 20. Write tests for domain inheritance in hierarchical rules (And, Or, Not, quantifiers)
+- [ ] 21. Write tests for WithDescription/GetDescription (pointer-based lookup)
 
 ## Phase 2: Markdown Generator
 
 ### Core Implementation
-- [ ] 11. Implement Markdown generator with tree-based output
-- [ ] 12. Add domain grouping and filtering to Markdown generator
-- [ ] 13. Use group names as headers in Markdown output
+- [ ] 22. Implement Markdown generator with tree-based output
+- [ ] 23. Add domain grouping and filtering to Markdown generator
+- [ ] 24. Use group names as headers in Markdown output
 
 ### Enhancement
-- [ ] 14. Add collapsible sections and metadata to Markdown output
+- [ ] 25. Add collapsible sections and metadata to Markdown output
 
 ### Testing
-- [ ] 15. Write tests for Markdown generator
+- [ ] 26. Write tests for Markdown generator
 
 ## Phase 3: JSON Generator
 
 ### Core Implementation
-- [ ] 16. Define JSON schema for rule documentation (including domains and groups)
-- [ ] 17. Implement JSON generator with full metadata serialization
-- [ ] 18. Add JSON Schema validation
+- [ ] 27. Define JSON schema for rule documentation (including domains and groups)
+- [ ] 28. Implement JSON generator with full metadata serialization
+- [ ] 29. Add JSON Schema validation
 
 ### Enhancement
-- [ ] 19. Support domain and group filtering in JSON output
+- [ ] 30. Support domain and group filtering in JSON output
 
 ### Testing
-- [ ] 20. Write tests for JSON generator
+- [ ] 31. Write tests for JSON generator
 
 ## Phase 4: HTML Generator
 
 ### Core Implementation
-- [ ] 21. Create HTML template system
-- [ ] 22. Implement interactive UI with JavaScript (search/filter by domain and group)
+- [ ] 32. Create HTML template system
+- [ ] 33. Implement interactive UI with JavaScript (search/filter by domain and group)
 
 ### Enhancement
-- [ ] 23. Add domain and group navigation sidebar to HTML output
-- [ ] 24. Style HTML output with responsive CSS
+- [ ] 34. Add domain and group navigation sidebar to HTML output
+- [ ] 35. Style HTML output with responsive CSS
 
 ### Testing
-- [ ] 25. Write tests for HTML generator
+- [ ] 36. Write tests for HTML generator
 
 ## Phase 5: Mermaid Generator
 
 ### Core Implementation
-- [ ] 26. Implement Mermaid diagram generation
-- [ ] 27. Color-code or group by domain in Mermaid diagrams
-- [ ] 28. Label cross-domain subgraphs with group names in Mermaid
+- [ ] 37. Implement Mermaid diagram generation
+- [ ] 38. Color-code or group by domain in Mermaid diagrams
+- [ ] 39. Label cross-domain subgraphs with group names in Mermaid
 
 ### Testing
-- [ ] 29. Write tests for Mermaid generator
+- [ ] 40. Write tests for Mermaid generator
 
 ## Phase 6: Polish & Documentation
 
 ### Documentation
-- [ ] 30. Add comprehensive package documentation
-- [ ] 31. Create examples for each format with multi-domain scenarios
-- [ ] 32. Document domain-driven architecture patterns
-- [ ] 33. Update README with documentation generation section and auto-registration
-- [ ] 36. Create best practices guide for domain organization
+- [ ] 41. Add comprehensive package documentation
+- [ ] 42. Create examples for each format with multi-domain scenarios
+- [ ] 43. Document domain-driven architecture patterns (including domain inheritance)
+- [ ] 44. Update README with documentation generation section and auto-registration
+- [ ] 45. Create best practices guide for domain organization
 
 ### Testing & Quality
-- [ ] 34. Add integration tests with multi-package scenarios
-- [ ] 35. Performance optimization and benchmarks
-- [ ] 37. Ensure all code passes golangci-lint
-- [ ] 38. Verify 100% test coverage on public APIs
+- [ ] 46. Add integration tests with multi-package scenarios
+- [ ] 47. Performance optimization and benchmarks
+- [ ] 48. Ensure all code passes golangci-lint
+- [ ] 49. Verify 100% test coverage on public APIs
 
 ---
 
 ## Progress Summary
 
-- **Total Tasks**: 38
+- **Total Tasks**: 49
 - **Completed**: 0
 - **In Progress**: 0
-- **Pending**: 38
+- **Pending**: 49
 
 ## Notes
 
