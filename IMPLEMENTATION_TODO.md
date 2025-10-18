@@ -64,15 +64,15 @@ This TODO list tracks the implementation of the documentation generation feature
 ## Phase 4: HTML Generator
 
 ### Core Implementation
-- [ ] 32. Create HTML template system
-- [ ] 33. Implement interactive UI with JavaScript (search/filter by domain and group)
+- [x] 32. Create HTML template system
+- [x] 33. Implement interactive UI with JavaScript (search/filter by domain and group)
 
 ### Enhancement
-- [ ] 34. Add domain and group navigation sidebar to HTML output
-- [ ] 35. Style HTML output with responsive CSS
+- [x] 34. Add domain and group navigation sidebar to HTML output
+- [x] 35. Style HTML output with responsive CSS
 
 ### Testing
-- [ ] 36. Write tests for HTML generator
+- [x] 36. Write tests for HTML generator
 
 ## Phase 5: Mermaid Generator
 
