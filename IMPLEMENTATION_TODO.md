@@ -51,15 +51,15 @@ This TODO list tracks the implementation of the documentation generation feature
 ## Phase 3: JSON Generator
 
 ### Core Implementation
-- [ ] 27. Define JSON schema for rule documentation (including domains and groups)
-- [ ] 28. Implement JSON generator with full metadata serialization
+- [x] 27. Define JSON schema for rule documentation (including domains and groups)
+- [x] 28. Implement JSON generator with full metadata serialization
 - [ ] 29. Add JSON Schema validation
 
 ### Enhancement
-- [ ] 30. Support domain and group filtering in JSON output
+- [x] 30. Support domain and group filtering in JSON output
 
 ### Testing
-- [ ] 31. Write tests for JSON generator
+- [x] 31. Write tests for JSON generator
 
 ## Phase 4: HTML Generator
 
