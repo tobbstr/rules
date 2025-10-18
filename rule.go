@@ -170,6 +170,11 @@ func (r *andRule[T]) Name() string {
 	return r.name
 }
 
+// Children returns the child rules (for documentation purposes).
+func (r *andRule[T]) Children() []Rule[T] {
+	return r.rules
+}
+
 // orRule represents a logical OR of multiple rules.
 type orRule[T any] struct {
 	name  string
@@ -232,6 +237,11 @@ func (r *orRule[T]) Name() string {
 	return r.name
 }
 
+// Children returns the child rules (for documentation purposes).
+func (r *orRule[T]) Children() []Rule[T] {
+	return r.rules
+}
+
 // notRule represents a logical NOT of a rule.
 type notRule[T any] struct {
 	name string
@@ -278,6 +288,11 @@ func (r *notRule[T]) Evaluate(input T) (bool, error) {
 
 func (r *notRule[T]) Name() string {
 	return r.name
+}
+
+// Child returns the child rule (for documentation purposes).
+func (r *notRule[T]) Child() Rule[T] {
+	return r.rule
 }
 
 // collectDomainsFromRules collects and deduplicates domains from child rules.

@@ -38,15 +38,15 @@ This TODO list tracks the implementation of the documentation generation feature
 ## Phase 2: Markdown Generator
 
 ### Core Implementation
-- [ ] 22. Implement Markdown generator with tree-based output
-- [ ] 23. Add domain grouping and filtering to Markdown generator
-- [ ] 24. Use group names as headers in Markdown output
+- [x] 22. Implement Markdown generator with tree-based output
+- [x] 23. Add domain grouping and filtering to Markdown generator
+- [x] 24. Use group names as headers in Markdown output
 
 ### Enhancement
-- [ ] 25. Add collapsible sections and metadata to Markdown output
+- [x] 25. Add collapsible sections and metadata to Markdown output
 
 ### Testing
-- [ ] 26. Write tests for Markdown generator
+- [x] 26. Write tests for Markdown generator
 
 ## Phase 3: JSON Generator
 
