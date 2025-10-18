@@ -340,13 +340,9 @@ func TestRuleNameAndDescription(t *testing.T) {
 		if rule.Name() != "test rule" {
 			t.Errorf("Name() = %v, want %v", rule.Name(), "test rule")
 		}
-		if rule.Description() != "this is a test rule" {
-			t.Errorf(
-				"Description() = %v, want %v",
-				rule.Description(),
-				"this is a test rule",
-			)
-		}
+		// Note: Description() method was removed from Rule interface.
+		// Descriptions are now stored in the registry as metadata.
+		// To test descriptions, use the registry: GetDescription(rule)
 	})
 }
 

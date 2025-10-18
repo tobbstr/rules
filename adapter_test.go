@@ -126,13 +126,8 @@ func TestMapNameAndDescription(t *testing.T) {
 		)
 	}
 
-	desc := mappedRule.Description()
-	if !contains(desc, "MAPPED") || !contains(desc, "user rule") {
-		t.Errorf(
-			"Description() = %q, should contain MAPPED and user rule",
-			desc,
-		)
-	}
+	// Note: Description() method was removed from Rule interface.
+	// Descriptions are now stored in the registry as metadata.
 }
 
 func TestCombine(t *testing.T) {

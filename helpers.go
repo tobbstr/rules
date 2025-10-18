@@ -33,7 +33,7 @@ func NoneOf[T any](name string, rules ...Rule[T]) Rule[T] {
 }
 
 // AtLeast creates a rule that is satisfied if at least n of the provided
-// rules are satisfied.
+// rules are satisfied. Automatically inherits domains from child rules.
 func AtLeast[T any](
 	name string,
 	n int,
@@ -58,11 +58,19 @@ func AtLeast[T any](
 		}
 		return satisfied >= n, nil
 	}
-	return New(name, predicate)
+	rule := New(name, predicate)
+
+	// Collect and deduplicate domains from children
+	domains := collectDomainsFromRules(rules)
+	if len(domains) > 0 {
+		_ = Register(rule, WithDomains(domains...))
+	}
+
+	return rule
 }
 
 // Exactly creates a rule that is satisfied if exactly n of the provided
-// rules are satisfied.
+// rules are satisfied. Automatically inherits domains from child rules.
 func Exactly[T any](
 	name string,
 	n int,
@@ -84,11 +92,19 @@ func Exactly[T any](
 		}
 		return satisfied == n, nil
 	}
-	return New(name, predicate)
+	rule := New(name, predicate)
+
+	// Collect and deduplicate domains from children
+	domains := collectDomainsFromRules(rules)
+	if len(domains) > 0 {
+		_ = Register(rule, WithDomains(domains...))
+	}
+
+	return rule
 }
 
 // AtMost creates a rule that is satisfied if at most n of the provided
-// rules are satisfied.
+// rules are satisfied. Automatically inherits domains from child rules.
 func AtMost[T any](
 	name string,
 	n int,
@@ -113,5 +129,13 @@ func AtMost[T any](
 		}
 		return true, nil
 	}
-	return New(name, predicate)
+	rule := New(name, predicate)
+
+	// Collect and deduplicate domains from children
+	domains := collectDomainsFromRules(rules)
+	if len(domains) > 0 {
+		_ = Register(rule, WithDomains(domains...))
+	}
+
+	return rule
 }

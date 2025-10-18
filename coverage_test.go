@@ -15,81 +15,8 @@ func TestDescriptions(t *testing.T) {
 		},
 	)
 
-	rule2 := New(
-		"rule2",
-		func(input testInput) (bool, error) {
-			return input.value < 100, nil
-		},
-	)
-
-	t.Run("AND rule description", func(t *testing.T) {
-		t.Parallel()
-
-		andRule := And("test AND", rule1, rule2)
-		desc := andRule.Description()
-
-		if desc == "" {
-			t.Error("Expected non-empty description")
-		}
-
-		// Check that it contains rule names
-		expectedSubstrings := []string{"test AND", "ALL OF", "rule1", "rule2"}
-		for _, substr := range expectedSubstrings {
-			if !contains(desc, substr) {
-				t.Errorf(
-					"Expected description to contain %q, got %q",
-					substr,
-					desc,
-				)
-			}
-		}
-	})
-
-	t.Run("OR rule description", func(t *testing.T) {
-		t.Parallel()
-
-		orRule := Or("test OR", rule1, rule2)
-		desc := orRule.Description()
-
-		if desc == "" {
-			t.Error("Expected non-empty description")
-		}
-
-		// Check that it contains rule names
-		expectedSubstrings := []string{"test OR", "ANY OF", "rule1", "rule2"}
-		for _, substr := range expectedSubstrings {
-			if !contains(desc, substr) {
-				t.Errorf(
-					"Expected description to contain %q, got %q",
-					substr,
-					desc,
-				)
-			}
-		}
-	})
-
-	t.Run("NOT rule description", func(t *testing.T) {
-		t.Parallel()
-
-		notRule := Not("test NOT", rule1)
-		desc := notRule.Description()
-
-		if desc == "" {
-			t.Error("Expected non-empty description")
-		}
-
-		// Check that it contains rule name
-		expectedSubstrings := []string{"test NOT", "NOT", "rule1"}
-		for _, substr := range expectedSubstrings {
-			if !contains(desc, substr) {
-				t.Errorf(
-					"Expected description to contain %q, got %q",
-					substr,
-					desc,
-				)
-			}
-		}
-	})
+	// Note: Description() method was removed from Rule interface.
+	// Descriptions are now stored in the registry as metadata.
 
 	t.Run("NOT rule name", func(t *testing.T) {
 		t.Parallel()
