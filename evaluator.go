@@ -29,7 +29,7 @@ func NewEvaluator[T any](rule Rule[T]) *Evaluator[T] {
 	return &Evaluator[T]{rule: rule}
 }
 
-// Evaluate evaluates the rule and returns a detailed result.
+// Evaluate evaluates the rule and returns a detailed result with timing information.
 func (e *Evaluator[T]) Evaluate(input T) Result {
 	start := time.Now()
 	satisfied, err := e.rule.Evaluate(input)
@@ -43,46 +43,118 @@ func (e *Evaluator[T]) Evaluate(input T) Result {
 	}
 }
 
+// EvaluateFast evaluates the rule without timing overhead for maximum performance.
+// Use this when you don't need timing information in the result.
+func (e *Evaluator[T]) EvaluateFast(input T) (bool, error) {
+	return e.rule.Evaluate(input)
+}
+
 // EvaluateDetailed evaluates the rule and returns a detailed result
 // including child rule results for hierarchical rules.
+// This evaluates all children to provide a complete view.
 func (e *Evaluator[T]) EvaluateDetailed(input T) Result {
-	return e.evaluateRuleDetailed(e.rule, input)
+	return e.evaluateRuleDetailed(e.rule, input, false)
+}
+
+// EvaluateDetailedShortCircuit evaluates the rule and returns a detailed result
+// with short-circuit optimization. For AND rules, stops on first failure.
+// For OR rules, stops on first success. This is faster but provides incomplete child results.
+func (e *Evaluator[T]) EvaluateDetailedShortCircuit(input T) Result {
+	return e.evaluateRuleDetailed(e.rule, input, true)
 }
 
 func (e *Evaluator[T]) evaluateRuleDetailed(
 	rule Rule[T],
 	input T,
+	shortCircuit bool,
 ) Result {
 	start := time.Now()
 
 	var children []Result
+	var satisfied bool
+	var err error
 
 	// Check if rule is hierarchical and evaluate children
+	// Compute result directly from children to avoid double evaluation
 	switch r := rule.(type) {
 	case *andRule[T]:
-		for _, childRule := range r.rules {
-			children = append(
-				children,
-				e.evaluateRuleDetailed(childRule, input),
-			)
+		if len(r.rules) == 0 {
+			err = ErrEmptyRules
+			satisfied = false
+		} else {
+			satisfied = true
+			children = make([]Result, 0, len(r.rules))
+			for _, childRule := range r.rules {
+				if childRule == nil {
+					err = ErrNilRule
+					satisfied = false
+					break
+				}
+				childResult := e.evaluateRuleDetailed(childRule, input, shortCircuit)
+				children = append(children, childResult)
+				if childResult.Error != nil {
+					err = childResult.Error
+					satisfied = false
+					break
+				}
+				if !childResult.Satisfied {
+					satisfied = false
+					if shortCircuit {
+						break
+					}
+					// Continue evaluating remaining children for complete detailed view
+				}
+			}
 		}
 	case *orRule[T]:
-		for _, childRule := range r.rules {
-			children = append(
-				children,
-				e.evaluateRuleDetailed(childRule, input),
-			)
+		if len(r.rules) == 0 {
+			err = ErrEmptyRules
+			satisfied = false
+		} else {
+			satisfied = false
+			children = make([]Result, 0, len(r.rules))
+			for _, childRule := range r.rules {
+				if childRule == nil {
+					err = ErrNilRule
+					satisfied = false
+					break
+				}
+				childResult := e.evaluateRuleDetailed(childRule, input, shortCircuit)
+				children = append(children, childResult)
+				if childResult.Error != nil {
+					err = childResult.Error
+					satisfied = false
+					break
+				}
+				if childResult.Satisfied {
+					satisfied = true
+					if shortCircuit {
+						break
+					}
+					// Continue evaluating remaining children for complete detailed view
+				}
+			}
 		}
 	case *notRule[T]:
-		if r.rule != nil {
-			children = append(
-				children,
-				e.evaluateRuleDetailed(r.rule, input),
-			)
+		if r.rule == nil {
+			err = ErrNilRule
+			satisfied = false
+		} else {
+			children = make([]Result, 0, 1)
+			childResult := e.evaluateRuleDetailed(r.rule, input, shortCircuit)
+			children = append(children, childResult)
+			if childResult.Error != nil {
+				err = childResult.Error
+				satisfied = false
+			} else {
+				satisfied = !childResult.Satisfied
+			}
 		}
+	default:
+		// For simple rules, evaluate directly
+		satisfied, err = rule.Evaluate(input)
 	}
 
-	satisfied, err := rule.Evaluate(input)
 	duration := time.Since(start)
 
 	return Result{

@@ -1,0 +1,19 @@
+Performance Comparison
+=====================
+
+Key Metrics:
+
+BenchmarkEvaluatorDetailedAnd3:
+  Before: 1068 ns/op, 512 B/op, 3 allocs/op
+  After:   853.8 ns/op, 224 B/op, 1 allocs/op
+  Improvement: ~20% faster, 56% less memory, 67% fewer allocations
+
+BenchmarkEvaluatorDetailedNested:
+  Before: 1873 ns/op, 672 B/op, 6 allocs/op
+  After:  1598 ns/op, 432 B/op, 3 allocs/op
+  Improvement: ~15% faster, 36% less memory, 50% fewer allocations
+
+BenchmarkDetailedEvaluation:
+  Before: 1258 ns/op, 448 B/op, 4 allocs/op
+  After:  1115 ns/op, 288 B/op, 2 allocs/op
+  Improvement: ~11% faster, 36% less memory, 50% fewer allocations

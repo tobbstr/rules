@@ -1,0 +1,24 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/tobbstr/rules
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkSimpleRuleEvaluation-12         	230038155	         5.034 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAndRule3Children-12             	50387274	        22.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAndRule10Children-12            	17321023	        61.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkOrRule3ChildrenFirstMatch-12    	120372554	        10.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkOrRule3ChildrenLastMatch-12     	52568276	        21.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNotRule-12                      	133186275	         9.000 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDeeplyNestedRules-12            	22270996	        48.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkWideRuleTree-12                 	 1896446	       605.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRuleWithError-12                	 2539736	       459.8 ns/op	     112 B/op	       4 allocs/op
+BenchmarkEvaluatorEvaluate-12            	 8179486	       134.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorDetailedSimple-12      	 7940668	       156.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorDetailedAnd3-12        	 1000000	      1068 ns/op	     512 B/op	       3 allocs/op
+BenchmarkEvaluatorDetailedNested-12      	  570859	      1873 ns/op	     672 B/op	       6 allocs/op
+BenchmarkParallelEvaluation-12           	307555526	         4.162 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRealWorldOrderValidation-12     	32657534	        40.76 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRuleEvaluation-12               	53452542	        20.44 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDetailedEvaluation-12           	  853639	      1258 ns/op	     448 B/op	       4 allocs/op
+PASS
+ok  	github.com/tobbstr/rules	25.672s
+?   	github.com/tobbstr/rules/cmd/gendocs	[no test files]

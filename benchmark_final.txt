@@ -1,0 +1,27 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/tobbstr/rules
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkSimpleRuleEvaluation-12                            	226039652	         5.226 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAndRule3Children-12                                	48463248	        25.90 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAndRule10Children-12                               	16948090	        69.71 ns/op	       0 B/op	       0 allocs/op
+BenchmarkOrRule3ChildrenFirstMatch-12                       	100000000	        10.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkOrRule3ChildrenLastMatch-12                        	48925290	        23.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNotRule-12                                         	128620386	         9.361 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDeeplyNestedRules-12                               	22105357	        51.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkWideRuleTree-12                                    	 1804837	       653.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRuleWithError-12                                   	 2427254	       503.6 ns/op	     112 B/op	       4 allocs/op
+BenchmarkEvaluatorEvaluate-12                               	 8337586	       140.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorDetailedSimple-12                         	 8012138	       144.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorDetailedAnd3-12                           	 1393394	       858.1 ns/op	     224 B/op	       1 allocs/op
+BenchmarkEvaluatorDetailedNested-12                         	  703328	      1618 ns/op	     432 B/op	       3 allocs/op
+BenchmarkParallelEvaluation-12                              	270530876	         5.365 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRealWorldOrderValidation-12                        	26058932	        45.56 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluatorDetailedShortCircuitAndFirstFails-12      	 2752864	       431.8 ns/op	     224 B/op	       1 allocs/op
+BenchmarkEvaluatorDetailedShortCircuitOrFirstSucceeds-12    	 2842892	       428.8 ns/op	     224 B/op	       1 allocs/op
+BenchmarkEvaluateFast-12                                    	48807747	        22.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRuleEvaluation-12                                  	62109660	        19.09 ns/op	       0 B/op	       0 allocs/op
+BenchmarkDetailedEvaluation-12                              	 1203892	      1005 ns/op	     288 B/op	       2 allocs/op
+PASS
+ok  	github.com/tobbstr/rules	30.801s
+?   	github.com/tobbstr/rules/cmd/gendocs	[no test files]

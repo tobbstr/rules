@@ -278,6 +278,151 @@ func TestResultHasError(t *testing.T) {
 	}
 }
 
+func TestEvaluatorFast(t *testing.T) {
+	t.Parallel()
+
+	rule := New(
+		"value > 10",
+		func(input testInput) (bool, error) {
+			return input.value > 10, nil
+		},
+	)
+
+	evaluator := NewEvaluator(rule)
+
+	t.Run("satisfied", func(t *testing.T) {
+		satisfied, err := evaluator.EvaluateFast(testInput{value: 15})
+
+		if !satisfied {
+			t.Error("Expected rule to be satisfied")
+		}
+
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+
+	t.Run("not satisfied", func(t *testing.T) {
+		satisfied, err := evaluator.EvaluateFast(testInput{value: 5})
+
+		if satisfied {
+			t.Error("Expected rule to not be satisfied")
+		}
+
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+}
+
+func TestEvaluatorDetailedShortCircuit(t *testing.T) {
+	t.Parallel()
+
+	rule1 := New(
+		"value > 10",
+		func(input testInput) (bool, error) {
+			return input.value > 10, nil
+		},
+	)
+	rule2 := New(
+		"value < 100",
+		func(input testInput) (bool, error) {
+			return input.value < 100, nil
+		},
+	)
+	rule3 := New(
+		"valid",
+		func(input testInput) (bool, error) {
+			return input.valid, nil
+		},
+	)
+
+	t.Run("AND stops on first failure", func(t *testing.T) {
+		andRule := And("all checks", rule1, rule2, rule3)
+		evaluator := NewEvaluator(andRule)
+
+		// First rule fails, should short-circuit
+		result := evaluator.EvaluateDetailedShortCircuit(testInput{value: 5, valid: true})
+
+		if result.Satisfied {
+			t.Error("Expected rule to not be satisfied")
+		}
+
+		// Should only have 1 child result (the failing one)
+		if len(result.Children) != 1 {
+			t.Errorf("Expected 1 child result, got %d", len(result.Children))
+		}
+
+		if result.Children[0].RuleName != "value > 10" {
+			t.Errorf("Expected first child, got %q", result.Children[0].RuleName)
+		}
+	})
+
+	t.Run("OR stops on first success", func(t *testing.T) {
+		orRule := Or("any check", rule1, rule2, rule3)
+		evaluator := NewEvaluator(orRule)
+
+		// First rule succeeds, should short-circuit
+		result := evaluator.EvaluateDetailedShortCircuit(testInput{value: 15, valid: false})
+
+		if !result.Satisfied {
+			t.Error("Expected rule to be satisfied")
+		}
+
+		// Should only have 1 child result (the succeeding one)
+		if len(result.Children) != 1 {
+			t.Errorf("Expected 1 child result, got %d", len(result.Children))
+		}
+
+		if result.Children[0].RuleName != "value > 10" {
+			t.Errorf("Expected first child, got %q", result.Children[0].RuleName)
+		}
+	})
+
+	t.Run("AND evaluates all when all pass", func(t *testing.T) {
+		andRule := And("all checks", rule1, rule2)
+		evaluator := NewEvaluator(andRule)
+
+		result := evaluator.EvaluateDetailedShortCircuit(testInput{value: 50})
+
+		if !result.Satisfied {
+			t.Error("Expected rule to be satisfied")
+		}
+
+		// Should have all child results
+		if len(result.Children) != 2 {
+			t.Errorf("Expected 2 child results, got %d", len(result.Children))
+		}
+	})
+
+	t.Run("nested rules with short-circuit", func(t *testing.T) {
+		innerAnd := And("inner", rule1, rule2)
+		outerOr := Or("outer", innerAnd, rule3)
+
+		evaluator := NewEvaluator(outerOr)
+
+		// Inner AND succeeds, outer OR should short-circuit
+		result := evaluator.EvaluateDetailedShortCircuit(testInput{value: 50, valid: false})
+
+		if !result.Satisfied {
+			t.Error("Expected rule to be satisfied")
+		}
+
+		// Should only have 1 child (the succeeding innerAnd)
+		if len(result.Children) != 1 {
+			t.Errorf("Expected 1 child result, got %d", len(result.Children))
+		}
+
+		// The inner AND should have evaluated all its children
+		if len(result.Children[0].Children) != 2 {
+			t.Errorf(
+				"Expected inner AND to have 2 children, got %d",
+				len(result.Children[0].Children),
+			)
+		}
+	})
+}
+
 func contains(s, substr string) bool {
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {

@@ -803,7 +803,6 @@ if err != nil {
 - Rules are evaluated lazily (short-circuit evaluation)
 - AND rules stop at first failure
 - OR rules stop at first success
-- Use context timeouts for expensive predicates
 - Consider caching expensive rule evaluations
 
 ## License
