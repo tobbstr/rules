@@ -77,12 +77,12 @@ This TODO list tracks the implementation of the documentation generation feature
 ## Phase 5: Mermaid Generator
 
 ### Core Implementation
-- [ ] 37. Implement Mermaid diagram generation
-- [ ] 38. Color-code or group by domain in Mermaid diagrams
-- [ ] 39. Label cross-domain subgraphs with group names in Mermaid
+- [x] 37. Implement Mermaid diagram generation
+- [x] 38. Color-code or group by domain in Mermaid diagrams
+- [x] 39. Label cross-domain subgraphs with group names in Mermaid
 
 ### Testing
-- [ ] 40. Write tests for Mermaid generator
+- [x] 40. Write tests for Mermaid generator
 
 ## Phase 6: Polish & Documentation
 
