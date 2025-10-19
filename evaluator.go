@@ -213,3 +213,20 @@ func (r Result) IsSuccessful() bool {
 func (r Result) HasError() bool {
 	return r.Error != nil
 }
+
+// UnsatisfiedRules returns the names of all unsatisfied rules in the evaluation tree.
+// It recursively traverses the result and its children to collect all rule names
+// where Satisfied is false.
+func (r Result) UnsatisfiedRules() []string {
+	var unsatisfied []string
+
+	if !r.Satisfied {
+		unsatisfied = append(unsatisfied, r.RuleName)
+	}
+
+	for _, child := range r.Children {
+		unsatisfied = append(unsatisfied, child.UnsatisfiedRules()...)
+	}
+
+	return unsatisfied
+}

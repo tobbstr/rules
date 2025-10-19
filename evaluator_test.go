@@ -423,6 +423,148 @@ func TestEvaluatorDetailedShortCircuit(t *testing.T) {
 	})
 }
 
+func TestResultUnsatisfiedRules(t *testing.T) {
+	t.Parallel()
+
+	rule1 := New(
+		"value > 10",
+		func(input testInput) (bool, error) {
+			return input.value > 10, nil
+		},
+	)
+	rule2 := New(
+		"value < 100",
+		func(input testInput) (bool, error) {
+			return input.value < 100, nil
+		},
+	)
+	rule3 := New(
+		"valid",
+		func(input testInput) (bool, error) {
+			return input.valid, nil
+		},
+	)
+
+	tests := []struct {
+		name     string
+		rule     Rule[testInput]
+		input    testInput
+		expected []string
+	}{
+		{
+			name:     "simple rule satisfied",
+			rule:     rule1,
+			input:    testInput{value: 15},
+			expected: []string{},
+		},
+		{
+			name:     "simple rule not satisfied",
+			rule:     rule1,
+			input:    testInput{value: 5},
+			expected: []string{"value > 10"},
+		},
+		{
+			name:     "AND all satisfied",
+			rule:     And("all checks", rule1, rule2, rule3),
+			input:    testInput{value: 50, valid: true},
+			expected: []string{},
+		},
+		{
+			name:     "AND one not satisfied",
+			rule:     And("all checks", rule1, rule2, rule3),
+			input:    testInput{value: 50, valid: false},
+			expected: []string{"all checks", "valid"},
+		},
+		{
+			name:     "AND multiple not satisfied",
+			rule:     And("all checks", rule1, rule2, rule3),
+			input:    testInput{value: 5, valid: false},
+			expected: []string{"all checks", "value > 10", "valid"},
+		},
+		{
+			name:     "OR some children unsatisfied but OR satisfied",
+			rule:     Or("any check", rule1, rule2, rule3),
+			input:    testInput{value: 5, valid: false},
+			expected: []string{"value > 10", "valid"},
+		},
+		{
+			name:     "OR one child satisfied",
+			rule:     Or("any check", rule1, rule2, rule3),
+			input:    testInput{value: 50, valid: false},
+			expected: []string{"valid"},
+		},
+		{
+			name:     "OR all children unsatisfied",
+			rule:     Or("any check", rule1, rule3),
+			input:    testInput{value: 5, valid: false},
+			expected: []string{"any check", "value > 10", "valid"},
+		},
+		{
+			name:  "nested rules with failures",
+			rule:  And("outer", And("inner", rule1, rule2), rule3),
+			input: testInput{value: 5, valid: false},
+			expected: []string{
+				"outer",
+				"inner",
+				"value > 10",
+				"valid",
+			},
+		},
+		{
+			name:     "NOT satisfied (child unsatisfied)",
+			rule:     Not("not check", rule1),
+			input:    testInput{value: 5},
+			expected: []string{"value > 10"},
+		},
+		{
+			name:     "NOT not satisfied (child satisfied)",
+			rule:     Not("not check", rule1),
+			input:    testInput{value: 50},
+			expected: []string{"not check"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			evaluator := NewEvaluator(tt.rule)
+			result := evaluator.EvaluateDetailed(tt.input)
+
+			unsatisfied := result.UnsatisfiedRules()
+
+			if len(unsatisfied) != len(tt.expected) {
+				t.Errorf(
+					"Expected %d unsatisfied rules, got %d\nExpected: %v\nGot: %v",
+					len(tt.expected),
+					len(unsatisfied),
+					tt.expected,
+					unsatisfied,
+				)
+				return
+			}
+
+			// Check each expected rule is in the result
+			for _, expectedRule := range tt.expected {
+				found := false
+				for _, actualRule := range unsatisfied {
+					if actualRule == expectedRule {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf(
+						"Expected rule %q not found in unsatisfied rules: %v",
+						expectedRule,
+						unsatisfied,
+					)
+				}
+			}
+		})
+	}
+}
+
 func contains(s, substr string) bool {
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {
