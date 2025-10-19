@@ -596,6 +596,26 @@ func writeHTMLRule(sb *strings.Builder, regRule RegisteredRule, opts DocumentOpt
 
 // writeHTMLMetadata writes additional metadata fields.
 func writeHTMLMetadata(sb *strings.Builder, metadata *RuleMetadata) {
+	if metadata.RequirementID != "" {
+		sb.WriteString(`                            <div class="metadata-item">
+                                <strong>Requirement ID</strong>
+                                <span>`)
+		sb.WriteString(html.EscapeString(metadata.RequirementID))
+		sb.WriteString(`</span>
+                            </div>
+`)
+	}
+
+	if metadata.BusinessDescription != "" {
+		sb.WriteString(`                            <div class="metadata-item">
+                                <strong>Business Requirement</strong>
+                                <span>`)
+		sb.WriteString(html.EscapeString(metadata.BusinessDescription))
+		sb.WriteString(`</span>
+                            </div>
+`)
+	}
+
 	if metadata.Owner != "" {
 		sb.WriteString(`                            <div class="metadata-item">
                                 <strong>Owner</strong>

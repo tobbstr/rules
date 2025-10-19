@@ -11,12 +11,12 @@ business rules in Go.
 - **Detailed results**: Comprehensive evaluation results with timing and 
   error information
 - **Composable**: Combine rules using AND, OR, NOT logical operators
-- **Well-tested**: 100% test coverage on public APIs
+- **Well-tested**: 94.4% test coverage with 239 test cases
 
 ## Installation
 
 ```bash
-go get github.com/tobbstr/the/rules
+go get github.com/tobbstr/rules
 ```
 
 ## Quick Start
@@ -24,8 +24,9 @@ go get github.com/tobbstr/the/rules
 ```go
 package main
 
-import (    "fmt"
-    "github.com/tobbstr/the/rules"
+import (
+    "fmt"
+    "github.com/tobbstr/rules"
 )
 
 type Order struct {
@@ -54,6 +55,151 @@ func main() {
 }
 ```
 
+## Use Cases
+
+### When to Use This Library
+
+This library is an excellent fit for:
+
+#### 1. **Business Rule Validation**
+Complex validation logic for orders, applications, requests, or any domain objects with multiple interdependent conditions.
+- E-commerce order eligibility (minimum amounts, shipping restrictions, customer tiers)
+- Loan and credit approval systems (credit scores, income requirements, debt ratios)
+- Insurance underwriting rules (risk factors, coverage limits, exclusions)
+- Regulatory compliance checks (KYC, AML, data residency)
+
+#### 2. **Access Control & Authorization**
+Multi-factor authorization decisions that go beyond simple role checks.
+- Role-based access control (RBAC) with conditional requirements
+- Attribute-based access control (ABAC) with complex policies
+- Resource-specific permissions with contextual rules
+- MFA and security posture requirements
+
+#### 3. **Dynamic Filtering & Matching**
+Building configurable filters from user preferences or system configuration.
+- Product catalog filtering (price, category, ratings, availability)
+- Search result refinement with multiple criteria
+- Recommendation system eligibility rules
+- Content moderation policies
+
+#### 4. **Workflow & State Validation**
+Validating whether entities can transition between states or proceed in workflows.
+- Order lifecycle validation (can ship? can cancel? can refund?)
+- User onboarding progress gates
+- Multi-step form validation with dependencies
+- Feature flag and experiment eligibility
+
+#### 5. **Pricing & Discount Rules**
+Determining eligibility for promotions, discounts, or special pricing.
+- Customer tier-based pricing
+- Volume discount eligibility
+- Promotional campaign rules
+- Dynamic pricing conditions
+
+#### 6. **Audit & Compliance**
+When you need detailed records of why decisions were made.
+- Detailed evaluation trails for auditing
+- Compliance documentation generation
+- Decision explanation for transparency
+- Regulatory reporting requirements
+
+#### 7. **Testing & Validation**
+As part of your test suite for complex domain logic.
+- Table-driven tests with hierarchical rule evaluation
+- Integration tests for business logic
+- Regression testing of rule changes
+- Documentation of business requirements
+
+### When NOT to Use This Library
+
+This library may not be the best choice for:
+
+#### 1. **Simple Validation**
+For straightforward single-condition checks, this library adds unnecessary overhead.
+❌ **Don't use**: Checking if `age >= 18` as a standalone operation  
+✅ **Use instead**: Direct conditional logic or simple validator functions
+
+#### 2. **High-Frequency, Low-Latency Operations**
+Performance-critical hot paths where every microsecond matters.
+❌ **Don't use**: Request routing, packet filtering, tight game loops  
+✅ **Use instead**: Optimized direct code, lookup tables, or specialized libraries
+
+The library's detailed evaluation and hierarchical structure add overhead (typically microseconds per rule, but can accumulate).
+
+#### 3. **Rules Requiring Side Effects**
+Rules that need to modify state, make database calls, or trigger actions.
+❌ **Don't use**: Updating inventory, sending emails, logging transactions  
+✅ **Use instead**: Command pattern, service layer methods, event handlers
+
+Rules should be pure predicates that evaluate conditions, not perform actions.
+
+#### 4. **Frequently Changing Rules**
+Business logic that changes multiple times per day or needs no-code editing.
+❌ **Don't use**: A/B test variants, ML model outputs, user-customizable logic  
+✅ **Use instead**: Rule engines with UI (Drools, Easy Rules), feature flag systems
+
+This library requires code changes and deployments to modify rules.
+
+#### 5. **Complex State Machines**
+Systems with many states, transitions, and temporal logic.
+❌ **Don't use**: Workflow orchestration, saga patterns, multi-step transactions  
+✅ **Use instead**: State machine libraries, workflow engines (Temporal, Cadence)
+
+While you can represent states as rules, dedicated state machine libraries are more appropriate.
+
+#### 6. **Database Query Optimization**
+Translating business rules to efficient database queries.
+❌ **Don't use**: Filtering millions of records, complex joins, aggregations  
+✅ **Use instead**: Query builders, ORMs, database-native features
+
+Evaluate rules in code only after retrieving relevant data.
+
+#### 7. **Real-Time Stream Processing**
+Processing high-volume event streams with complex event patterns.
+❌ **Don't use**: IoT data processing, log aggregation, metrics pipelines  
+✅ **Use instead**: Stream processing frameworks (Flink, Kafka Streams)
+
+The library evaluates individual inputs, not event patterns over time.
+
+#### 8. **Machine Learning Integration**
+Rules that depend on ML model predictions or probabilistic decisions.
+❌ **Don't use**: Primary decision mechanism alongside ML scores  
+✅ **Consider carefully**: May work for eligibility checks before/after ML inference
+
+If your logic is mostly ML-driven, a simpler approach may suffice.
+
+#### 9. **Complex Algorithmic Logic**
+Algorithms with loops, recursion, or intermediate computations.
+❌ **Don't use**: Graph traversal, optimization problems, data transformations  
+✅ **Use instead**: Direct algorithmic implementation
+
+Rules are for evaluating conditions, not computing results.
+
+#### 10. **Embedded Systems or Resource-Constrained Environments**
+Environments with strict memory or CPU constraints.
+❌ **Don't use**: Microcontrollers, edge devices, mobile apps with tight budgets  
+✅ **Consider carefully**: Evaluate overhead; the library uses reflection and generics
+
+### Decision Guide
+
+**Use this library when:**
+- ✅ You have complex, hierarchical business logic
+- ✅ Rules compose from multiple conditions (AND, OR, NOT)
+- ✅ You need detailed evaluation results for auditing
+- ✅ Business logic needs clear documentation
+- ✅ Rules are relatively stable (hours to weeks between changes)
+- ✅ Performance overhead of microseconds per rule is acceptable
+- ✅ You want type-safe, compile-time checked rules
+
+**Don't use this library when:**
+- ❌ Simple if/else statements suffice
+- ❌ Rules need no-code editing by non-developers
+- ❌ Every nanosecond of performance matters
+- ❌ Rules require side effects or state mutations
+- ❌ You're building a workflow engine or state machine
+- ❌ Rules change multiple times per day
+- ❌ You need to evaluate rules in database queries
+
 ## Core Concepts
 
 ### Rules
@@ -65,9 +211,12 @@ of type `T`:
 type Rule[T any] interface {
     Evaluate(input T) (bool, error)
     Name() string
-    Description() string
 }
 ```
+
+**Note**: Rule descriptions are managed through the registry system using 
+`WithDescription()`, not as interface methods. This allows descriptions to be 
+updated without modifying rule implementations.
 
 ### Simple Rules
 
@@ -252,13 +401,306 @@ fmt.Println(result.String())
 //   ✓ valid country (took 40µs)
 ```
 
+## Documentation Generation
+
+The rules package includes a powerful documentation generation system that can automatically produce comprehensive documentation from your business rules in multiple formats.
+
+### Key Features
+
+- **Multiple Formats**: Generate Markdown, JSON, HTML, and Mermaid diagrams
+- **Domain-Driven Organization**: Group rules by business domains
+- **Auto-Registration**: Rules automatically register themselves for documentation
+- **Hierarchical Visualization**: Shows parent-child relationships
+- **Interactive HTML**: Collapsible sections, search, and navigation
+- **Rich Metadata**: Owners, versions, tags, dependencies
+
+### Quick Start
+
+```go
+// Define domains
+const (
+    OrderDomain rules.Domain = "order"
+    UserDomain  rules.Domain = "user"
+)
+
+// Create rules with domains - they auto-register
+minAmount := rules.NewWithDomain(
+    "minimum amount",
+    OrderDomain,
+    func(o Order) (bool, error) {
+        return o.Amount >= 100, nil
+    },
+)
+rules.WithDescription(minAmount, "Order must meet minimum amount")
+
+// Generate documentation
+md, err := rules.GenerateMarkdown(rules.DocumentOptions{
+    Title:         "Business Rules",
+    GroupByDomain: true,
+})
+
+html, err := rules.GenerateHTML(rules.DocumentOptions{
+    Title:           "Business Rules",
+    IncludeMetadata: true,
+})
+
+mermaid, err := rules.GenerateMermaid(rules.DocumentOptions{
+    GroupByDomain: true,
+})
+```
+
+### Domain-Based Organization
+
+Organize rules by business domains for better maintainability:
+
+```go
+// Create domain-specific rules
+orderRule := rules.NewWithDomain("valid order", OrderDomain, ...)
+userRule := rules.NewWithDomain("active user", UserDomain, ...)
+
+// Generate documentation for specific domains
+md, err := rules.GenerateDomainMarkdown(OrderDomain, rules.DocumentOptions{})
+
+// Or multiple domains
+md, err := rules.GenerateDomainsMarkdown(
+    []rules.Domain{OrderDomain, UserDomain},
+    rules.DocumentOptions{GroupByDomain: true},
+)
+```
+
+### Group-Based Organization
+
+Use groups for cross-domain categorization:
+
+```go
+validationRule := rules.NewWithGroup(
+    "email validation",
+    "Input Validation",  // Group name
+    []rules.Domain{UserDomain},
+    func(u User) (bool, error) {
+        return validateEmail(u.Email), nil
+    },
+)
+
+// Document by group
+md, err := rules.GenerateGroupMarkdown("Input Validation", rules.DocumentOptions{})
+```
+
+### Rich Metadata
+
+Add comprehensive metadata to your rules, including requirement traceability:
+
+```go
+rule := rules.NewWithDomain("premium order", OrderDomain, ...)
+
+rules.UpdateMetadata(rule, rules.RuleMetadata{
+    RequirementID:       "JIRA-1234",  // Link to external requirement
+    BusinessDescription: "Premium customers get free expedited shipping " +
+                        "on orders over $50",  // Plain English description
+    Owner:               "Order Team",
+    Version:             "2.0.0",
+    Tags:                []string{"premium", "high-value"},
+    Dependencies:        []rules.Domain{UserDomain, PaymentDomain},
+    RelatedRules:        []string{"VIP discount"},
+})
+
+// Generate with metadata
+md, err := rules.GenerateMarkdown(rules.DocumentOptions{
+    IncludeMetadata: true,
+})
+```
+
+#### Requirement Traceability
+
+The `RequirementID` and `BusinessDescription` fields enable direct traceability to external requirements:
+
+```go
+minimumAmount := rules.NewWithDomain("minimum amount", OrderDomain, ...)
+
+rules.UpdateMetadata(minimumAmount, rules.RuleMetadata{
+    RequirementID: "JIRA-1234",
+    BusinessDescription: "Standard customers must have a minimum order " +
+                        "amount of $100 to qualify for free shipping",
+    Owner:     "Order Team",
+    Version:   "1.0.0",
+    CreatedAt: time.Now(),
+})
+```
+
+This creates a direct link between your Jira tickets (or other requirement management tools) and the implementing code, making it easy to:
+- Verify which requirements have been implemented
+- Generate compliance reports
+- Track requirement coverage
+- Keep documentation synchronized with business requirements
+
+### Domain Inheritance
+
+Hierarchical rules automatically inherit domains from their children:
+
+```go
+// Child rules with domains
+rule1 := rules.NewWithDomain("check A", OrderDomain, ...)
+rule2 := rules.NewWithDomain("check B", UserDomain, ...)
+
+// Parent automatically gets both domains
+combined := rules.And("combined check", rule1, rule2)
+// combined now has both OrderDomain and UserDomain
+```
+
+### Output Formats
+
+#### Markdown
+Perfect for documentation sites, READMEs, and wikis:
+- Hierarchical structure with headers
+- Domain and group sections
+- Table of contents
+- Metadata display
+
+#### JSON
+Machine-readable format for tools and APIs:
+- Complete rule hierarchy
+- Full metadata serialization
+- Domain and group filtering
+- Easy integration with other systems
+
+#### HTML
+Interactive documentation with:
+- Collapsible rule sections
+- Real-time search
+- Navigation sidebar
+- Responsive design
+- Type-specific badges
+
+#### Mermaid
+Visual diagrams showing:
+- Rule hierarchies
+- Domain-based subgraphs
+- Different shapes per rule type
+- Connection arrows
+- Color coding
+
+### Filtering Documentation
+
+Control which rules to document:
+
+```go
+// Include only specific domains
+opts := rules.DocumentOptions{
+    IncludeDomains: []rules.Domain{OrderDomain, UserDomain},
+}
+
+// Exclude specific domains
+opts := rules.DocumentOptions{
+    ExcludeDomains: []rules.Domain{InternalDomain},
+}
+
+// Limit hierarchy depth
+opts := rules.DocumentOptions{
+    MaxDepth: 3,  // Only show 3 levels deep
+}
+```
+
+### Command-Line Tool
+
+Use the included CLI tool to generate documentation:
+
+```bash
+# Generate all formats (Markdown, HTML, JSON, Mermaid)
+go run ./cmd/gendocs/main.go
+
+# Custom output directory
+go run ./cmd/gendocs/main.go -output ./documentation
+
+# Specific formats only
+go run ./cmd/gendocs/main.go -formats markdown,html
+
+# Custom title and description
+go run ./cmd/gendocs/main.go \
+  -title "Order Processing Rules" \
+  -description "Business rules for our e-commerce platform"
+
+# See all options
+go run ./cmd/gendocs/main.go -help
+```
+
+**Available Flags:**
+- `-output` - Output directory (default: `docs`)
+- `-title` - Documentation title
+- `-description` - Documentation description
+- `-formats` - Comma-separated formats: `markdown,html,json,mermaid`
+- `-group-by-domain` - Group rules by domain (default: `true`)
+- `-include-metadata` - Include metadata in docs (default: `true`)
+
+### Keeping Documentation in Sync
+
+To ensure documentation stays synchronized with code, use one of these approaches:
+
+#### Option 1: Pre-commit Hook (Recommended)
+
+Automatically generate documentation before each commit:
+
+```bash
+# Create .git/hooks/pre-commit
+#!/bin/bash
+echo "Generating documentation..."
+go run ./cmd/gendocs/main.go || exit 1
+git add docs/
+echo "✓ Documentation updated"
+```
+
+Make it executable:
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
+#### Option 2: Makefile Integration
+
+```makefile
+.PHONY: docs
+docs:
+	@echo "Generating documentation..."
+	@go run ./cmd/gendocs/main.go
+	@echo "✓ Documentation generated"
+
+.PHONY: pre-commit
+pre-commit: test docs
+	@echo "✓ Ready to commit"
+```
+
+Developer workflow:
+```bash
+make pre-commit  # Run tests and generate docs
+git add .
+git commit -m "Add new rule"
+```
+
+#### Option 3: CI Validation
+
+Validate that documentation is up-to-date in CI (doesn't auto-commit):
+
+```yaml
+# .github/workflows/ci.yml
+- name: Check documentation is current
+  run: |
+    go run ./cmd/gendocs/main.go
+    if ! git diff --exit-code docs/; then
+      echo "❌ Documentation is out of date"
+      echo "Run 'go run ./cmd/gendocs/main.go' and commit the changes"
+      exit 1
+    fi
+    echo "✓ Documentation is up-to-date"
+```
+
+This approach ensures documentation is always committed with code changes, not added by CI.
+
 ## Complete Example
 
 ```go
 package main
 
-import (    "fmt"
-    "github.com/tobbstr/the/rules"
+import (
+    "fmt"
+    "github.com/tobbstr/rules"
 )
 
 type Order struct {

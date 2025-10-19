@@ -19,13 +19,15 @@ type JSONRuleDoc struct {
 
 // JSONMetadata represents rule metadata in JSON format.
 type JSONMetadata struct {
-	Owner        string   `json:"owner,omitempty"`
-	Version      string   `json:"version,omitempty"`
-	Tags         []string `json:"tags,omitempty"`
-	CreatedAt    string   `json:"createdAt,omitempty"`
-	UpdatedAt    string   `json:"updatedAt,omitempty"`
-	Dependencies []string `json:"dependencies,omitempty"`
-	RelatedRules []string `json:"relatedRules,omitempty"`
+	RequirementID       string   `json:"requirementId,omitempty"`
+	BusinessDescription string   `json:"businessDescription,omitempty"`
+	Owner               string   `json:"owner,omitempty"`
+	Version             string   `json:"version,omitempty"`
+	Tags                []string `json:"tags,omitempty"`
+	CreatedAt           string   `json:"createdAt,omitempty"`
+	UpdatedAt           string   `json:"updatedAt,omitempty"`
+	Dependencies        []string `json:"dependencies,omitempty"`
+	RelatedRules        []string `json:"relatedRules,omitempty"`
 }
 
 // JSONDocumentation represents the complete JSON documentation structure.
@@ -215,9 +217,11 @@ func buildJSONRuleDocFromNode(node *ruleNode, opts DocumentOptions) JSONRuleDoc 
 // buildJSONMetadata converts RuleMetadata to JSONMetadata.
 func buildJSONMetadata(metadata *RuleMetadata) *JSONMetadata {
 	jsonMeta := &JSONMetadata{
-		Owner:   metadata.Owner,
-		Version: metadata.Version,
-		Tags:    metadata.Tags,
+		RequirementID:       metadata.RequirementID,
+		BusinessDescription: metadata.BusinessDescription,
+		Owner:               metadata.Owner,
+		Version:             metadata.Version,
+		Tags:                metadata.Tags,
 	}
 
 	if !metadata.CreatedAt.IsZero() {

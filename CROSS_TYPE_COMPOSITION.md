@@ -102,7 +102,7 @@ combined := rules.CombineMany(
 package main
 
 import (    "fmt"
-    "github.com/tobbstr/the/rules"
+    "github.com/tobbstr/rules"
 )
 
 type User struct {

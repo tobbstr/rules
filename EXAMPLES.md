@@ -20,7 +20,7 @@ The simplest use case: define and evaluate a single rule.
 package main
 
 import (    "fmt"
-    "github.com/tobbstr/the/rules"
+    "github.com/tobbstr/rules"
 )
 
 func main() {
@@ -50,7 +50,7 @@ A realistic e-commerce example with hierarchical rules.
 package main
 
 import (    "fmt"
-    "github.com/tobbstr/the/rules"
+    "github.com/tobbstr/rules"
 )
 
 type Order struct {
@@ -186,7 +186,7 @@ Implementing role-based access control with business rules.
 package main
 
 import (    "fmt"
-    "github.com/tobbstr/the/rules"
+    "github.com/tobbstr/rules"
 )
 
 type User struct {
@@ -300,7 +300,7 @@ Complex business rules for loan approval with multiple criteria.
 package main
 
 import (    "fmt"
-    "github.com/tobbstr/the/rules"
+    "github.com/tobbstr/rules"
 )
 
 type LoanApplication struct {
@@ -451,7 +451,7 @@ Building rules dynamically based on configuration.
 package main
 
 import (    "fmt"
-    "github.com/tobbstr/the/rules"
+    "github.com/tobbstr/rules"
 )
 
 type Product struct {
@@ -587,7 +587,7 @@ package main
 import (
     "errors"
     "fmt"
-    "github.com/tobbstr/the/rules"
+    "github.com/tobbstr/rules"
 )
 
 type ValidationInput struct {
@@ -658,7 +658,7 @@ Combining rules that operate on different input types using mapping functions.
 package main
 
 import (    "fmt"
-    "github.com/tobbstr/the/rules"
+    "github.com/tobbstr/rules"
 )
 
 type User struct {

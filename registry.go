@@ -25,8 +25,13 @@ type RegisteredRule struct {
 	// Group is the human-readable group name (optional)
 	Group string
 
-	// Description is the documentation description (optional)
-	// This is the single source of truth for rule descriptions
+	// Description is the technical description of what the rule does.
+	// This is the single source of truth for rule descriptions.
+	// Intended for developers and technical documentation.
+	//
+	// Example: "Validates that order amount is at least $100"
+	//
+	// Set via: WithDescription() or UpdateDescription()
 	Description string
 
 	// Metadata provides additional rule information
@@ -38,6 +43,30 @@ type RegisteredRule struct {
 
 // RuleMetadata provides additional rule information.
 type RuleMetadata struct {
+	// RequirementID links to an external requirement identifier from your
+	// requirement management system (e.g., Jira, Azure DevOps, GitHub Issues).
+	// This enables traceability between business requirements and code.
+	//
+	// Examples: "JIRA-1234", "TICKET-567", "GH-42", "REQ-001"
+	//
+	// Use this to track which ticket or requirement this rule implements.
+	RequirementID string
+
+	// BusinessDescription is a plain-English description of WHY this rule exists
+	// from a business perspective. This should capture the original business
+	// requirement or policy, intended for product managers, business analysts,
+	// and non-technical stakeholders.
+	//
+	// Example: "Standard customers must have a minimum order amount of $100 to
+	// qualify for free shipping per our Q1 2025 shipping policy approved by the
+	// logistics team"
+	//
+	// This is different from Description (in RegisteredRule) which describes
+	// WHAT the rule does technically.
+	//
+	// Set via: UpdateMetadata()
+	BusinessDescription string
+
 	// Tags categorize the rule (beyond domain)
 	Tags []string
 

@@ -6,6 +6,59 @@ import (
 	"strings"
 )
 
+// Documentation Generation System
+//
+// This file provides the core infrastructure for generating documentation from business rules.
+// The documentation system supports multiple output formats (Markdown, JSON, HTML, Mermaid)
+// and is tightly integrated with the rule registry for automatic documentation generation.
+//
+// Key Features:
+//   - Domain-driven organization: Rules are grouped by business domains
+//   - Multiple output formats: Markdown, JSON, HTML, and Mermaid diagrams
+//   - Hierarchical visualization: Shows parent-child relationships between rules
+//   - Filtering: Include/exclude specific domains or groups
+//   - Metadata support: Owner, version, tags, dependencies, and more
+//   - Depth limiting: Control how deep to traverse rule hierarchies
+//
+// Basic Usage:
+//
+//	// Generate Markdown documentation for all rules
+//	md, err := rules.GenerateMarkdown(rules.DocumentOptions{
+//	    Title: "Business Rules",
+//	    GroupByDomain: true,
+//	})
+//
+//	// Generate HTML with interactive features
+//	html, err := rules.GenerateHTML(rules.DocumentOptions{
+//	    Title: "Business Rules",
+//	    IncludeMetadata: true,
+//	})
+//
+//	// Generate Mermaid diagram
+//	mermaid, err := rules.GenerateMermaid(rules.DocumentOptions{
+//	    GroupByDomain: true,
+//	})
+//
+// Domain-Specific Documentation:
+//
+//	// Document only Order domain rules
+//	md, err := rules.GenerateDomainMarkdown(OrderDomain, rules.DocumentOptions{})
+//
+//	// Document multiple domains
+//	md, err := rules.GenerateDomainsMarkdown(
+//	    []rules.Domain{OrderDomain, UserDomain},
+//	    rules.DocumentOptions{},
+//	)
+//
+// Group-Specific Documentation:
+//
+//	// Document rules in a specific group
+//	md, err := rules.GenerateGroupMarkdown("Validation Rules", rules.DocumentOptions{})
+//
+// The documentation system uses reflection to introspect rule hierarchies and extract
+// their structure, type information, and relationships. It integrates with the registry
+// to access rule metadata including descriptions, domains, groups, and custom metadata.
+
 // DocumentFormat represents the output format for documentation.
 type DocumentFormat int
 

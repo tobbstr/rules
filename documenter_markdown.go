@@ -240,6 +240,12 @@ func generateRuleMarkdown(sb *strings.Builder, regRule RegisteredRule, opts Docu
 
 // writeMetadata writes rule metadata to the string builder.
 func writeMetadata(sb *strings.Builder, metadata *RuleMetadata) {
+	if metadata.RequirementID != "" {
+		sb.WriteString(fmt.Sprintf("**Requirement ID**: %s\n\n", metadata.RequirementID))
+	}
+	if metadata.BusinessDescription != "" {
+		sb.WriteString(fmt.Sprintf("**Business Requirement**: %s\n\n", metadata.BusinessDescription))
+	}
 	if metadata.Owner != "" {
 		sb.WriteString(fmt.Sprintf("**Owner**: %s\n\n", metadata.Owner))
 	}
